@@ -14,7 +14,7 @@ const ShopContextProvider = (props) => {
 
   const currency = "AED";
   const delivery_fee = 200;
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
 
   const navigate = useNavigate();
 

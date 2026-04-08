@@ -9,7 +9,7 @@ import Login from "./components/Login";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-export const backendUrl = import.meta.env.VITE_BACKEND_URL;
+export const backendUrl = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
 
 export const currency = (price) => {
   return new Intl.NumberFormat('en-AE', { style: 'currency', currency: 'AED' }).format(price);
