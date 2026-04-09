@@ -1,9 +1,32 @@
 import mongoose from "mongoose";
 
+const getMongoDbUri = (inputUri) => {
+  const fallback = "mongodb://127.0.0.1:27017/trendify";
+  const rawUri = (inputUri || "").trim();
+
+  if (!rawUri) return fallback;
+
+  try {
+    const parsed = new URL(rawUri);
+    const currentDbPath = parsed.pathname.replace(/\/+$/, "");
+
+    // Force a valid DB name even when URI ends with "/" or has no DB segment.
+    if (currentDbPath !== "/trendify") {
+      parsed.pathname = "/trendify";
+    }
+
+    return parsed.toString();
+  } catch {
+    const withoutTrailingSlash = rawUri.replace(/\/+$/, "");
+    return withoutTrailingSlash.endsWith("/trendify")
+      ? withoutTrailingSlash
+      : `${withoutTrailingSlash}/trendify`;
+  }
+};
+
 const connectDB = async () => {
   try {
-    const baseUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017";
-    const dbUri = baseUri.endsWith("/trendify") ? baseUri : `${baseUri}/trendify`;
+    const dbUri = getMongoDbUri(process.env.MONGODB_URI);
 
     if (mongoose.connection.readyState === 1) return true;
 
