@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { assets } from "../assets/assets";
 import axios from "axios";
 import { backendUrl } from "../App";
@@ -11,11 +12,27 @@ const categoryOptions = [
   "Jewellery",
 ];
 
+/** Legacy DB category values → admin form values */
+const dbToFormCategory = {
+  Medicine: "Health & Care",
+  Cosmetics: "Beauty & Care",
+  Cloth: "Fashion & Design",
+  "Beauty Core": "Beauty & Care",
+  Jewelry: "Jewellery",
+};
+
 const Add = ({ token }) => {
+  const { productId } = useParams();
+  const navigate = useNavigate();
+  const isEditMode = Boolean(productId);
+
   const [image1, setImage1] = useState(null);
   const [image2, setImage2] = useState(null);
   const [image3, setImage3] = useState(null);
   const [image4, setImage4] = useState(null);
+
+  const [existingUrls, setExistingUrls] = useState(["", "", "", ""]);
+  const [loadingProduct, setLoadingProduct] = useState(false);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -25,6 +42,69 @@ const Add = ({ token }) => {
   const [sizes, setSizes] = useState([]);
   const [bestSeller, setBestSeller] = useState(false);
   const isFashionCategory = category === "Fashion & Design";
+
+  const resetForm = () => {
+    setImage1(null);
+    setImage2(null);
+    setImage3(null);
+    setImage4(null);
+    setExistingUrls(["", "", "", ""]);
+    setName("");
+    setDescription("");
+    setCategory("");
+    setSubCategory("");
+    setPrice("");
+    setSizes([]);
+    setBestSeller(false);
+  };
+
+  useEffect(() => {
+    if (!productId) {
+      resetForm();
+      setLoadingProduct(false);
+      return;
+    }
+
+    setLoadingProduct(true);
+
+    const load = async () => {
+      try {
+        const response = await axios.post(backendUrl + "/api/product/single", {
+          productId,
+        });
+
+        if (!response.data.success || !response.data.product) {
+          toast.error(response.data.message || "Product not found");
+          navigate("/list");
+          return;
+        }
+
+        const p = response.data.product;
+        const formCat = dbToFormCategory[p.category] || p.category;
+        setName(p.name || "");
+        setDescription(p.description || "");
+        setCategory(formCat);
+        setSubCategory(p.subCategory || "");
+        setPrice(String(p.price ?? ""));
+        setSizes(Array.isArray(p.sizes) ? p.sizes : []);
+        setBestSeller(Boolean(p.bestSeller));
+        setImage1(null);
+        setImage2(null);
+        setImage3(null);
+        setImage4(null);
+        const imgs = p.image || [];
+        setExistingUrls([0, 1, 2, 3].map((i) => imgs[i] || ""));
+      } catch (error) {
+        console.error(error);
+        toast.error(error.response?.data?.message || "Failed to load product");
+        navigate("/list");
+      } finally {
+        setLoadingProduct(false);
+      }
+    };
+
+    load();
+  }, [productId, navigate]);
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
@@ -44,54 +124,76 @@ const Add = ({ token }) => {
       formData.append("sizes", JSON.stringify(sizes));
       formData.append("bestSeller", bestSeller);
 
-      const response = await axios.post(
-        backendUrl + "/api/product/add",
-        formData,
-        { headers: { token } }
-      );
+      if (isEditMode) {
+        formData.append("productId", productId);
+        const response = await axios.post(
+          backendUrl + "/api/product/update",
+          formData,
+          { headers: { token } }
+        );
 
-      if (response.data.success) {
-        toast.success(response.data.message);
-        resetForm();
+        if (response.data.success) {
+          toast.success(response.data.message);
+          navigate("/list");
+        } else {
+          toast.error(response.data.message);
+        }
       } else {
-        toast.error(response.data.message);
+        const response = await axios.post(
+          backendUrl + "/api/product/add",
+          formData,
+          { headers: { token } }
+        );
+
+        if (response.data.success) {
+          toast.success(response.data.message);
+          resetForm();
+        } else {
+          toast.error(response.data.message);
+        }
       }
     } catch (error) {
       console.error(error);
-      toast.error("Something went wrong");
+      toast.error(error.response?.data?.message || "Something went wrong");
     }
   };
 
-  const resetForm = () => {
-    setImage1(null);
-    setImage2(null);
-    setImage3(null);
-    setImage4(null);
-    setName("");
-    setDescription("");
-    setCategory("");
-    setSubCategory("");
-    setPrice("");
-    setSizes([]);
-    setBestSeller(false);
-  };
+  const preview = (file, index) =>
+    file
+      ? URL.createObjectURL(file)
+      : existingUrls[index] || assets.upload_area;
+
+  if (isEditMode && loadingProduct) {
+    return (
+      <p className="text-lg text-gray-600">Loading product…</p>
+    );
+  }
 
   return (
     <form
       onSubmit={onSubmitHandler}
       className="flex flex-col items-start w-full gap-3"
     >
+      <h1 className="mb-2 text-2xl font-semibold text-gray-800">
+        {isEditMode ? "Edit product" : "Add product"}
+      </h1>
       <div>
         <p className="mb-2 text-lg font-semibold">Upload Product Image(s)</p>
+        {isEditMode && (
+          <p className="mb-2 text-sm text-gray-500">
+            Leave unchanged to keep current images; pick a file to replace that
+            slot.
+          </p>
+        )}
         <div className="flex gap-2">
           <label htmlFor="image1">
             <img
-              className="w-20 border-2 border-gray-500 rounded-lg cursor-pointer"
-              src={!image1 ? assets.upload_area : URL.createObjectURL(image1)}
-              alt="Upload Images"
+              className="w-20 border-2 border-gray-500 rounded-lg cursor-pointer object-cover h-20"
+              src={preview(image1, 0)}
+              alt="Upload slot 1"
             />
             <input
-              onChange={(e) => setImage1(e.target.files[0])}
+              onChange={(e) => setImage1(e.target.files[0] || null)}
               type="file"
               id="image1"
               hidden
@@ -100,12 +202,12 @@ const Add = ({ token }) => {
           </label>
           <label htmlFor="image2">
             <img
-              className="w-20 border-2 border-gray-500 rounded-lg cursor-pointer"
-              src={!image2 ? assets.upload_area : URL.createObjectURL(image2)}
-              alt="Upload Images"
+              className="w-20 border-2 border-gray-500 rounded-lg cursor-pointer object-cover h-20"
+              src={preview(image2, 1)}
+              alt="Upload slot 2"
             />
             <input
-              onChange={(e) => setImage2(e.target.files[0])}
+              onChange={(e) => setImage2(e.target.files[0] || null)}
               type="file"
               id="image2"
               hidden
@@ -114,12 +216,12 @@ const Add = ({ token }) => {
           </label>
           <label htmlFor="image3">
             <img
-              className="w-20 border-2 border-gray-500 rounded-lg cursor-pointer"
-              src={!image3 ? assets.upload_area : URL.createObjectURL(image3)}
-              alt="Upload Images"
+              className="w-20 border-2 border-gray-500 rounded-lg cursor-pointer object-cover h-20"
+              src={preview(image3, 2)}
+              alt="Upload slot 3"
             />
             <input
-              onChange={(e) => setImage3(e.target.files[0])}
+              onChange={(e) => setImage3(e.target.files[0] || null)}
               type="file"
               id="image3"
               hidden
@@ -128,12 +230,12 @@ const Add = ({ token }) => {
           </label>
           <label htmlFor="image4">
             <img
-              className="w-20 border-2 border-gray-500 rounded-lg cursor-pointer"
-              src={!image4 ? assets.upload_area : URL.createObjectURL(image4)}
-              alt="Upload Images"
+              className="w-20 border-2 border-gray-500 rounded-lg cursor-pointer object-cover h-20"
+              src={preview(image4, 3)}
+              alt="Upload slot 4"
             />
             <input
-              onChange={(e) => setImage4(e.target.files[0])}
+              onChange={(e) => setImage4(e.target.files[0] || null)}
               type="file"
               id="image4"
               hidden
@@ -159,7 +261,6 @@ const Add = ({ token }) => {
           onChange={(e) => setDescription(e.target.value)}
           value={description}
           className="w-full px-3 py-2 border-gray-500 max-w-[500px]"
-          type="text"
           placeholder="Enter Product Description"
           required
         />
@@ -257,14 +358,14 @@ const Add = ({ token }) => {
           type="submit"
           className="px-5 py-2 mt-2 text-white rounded-lg bg-slate-700"
         >
-          Add Product
+          {isEditMode ? "Update product" : "Add product"}
         </button>
         <button
           type="button"
           className="px-5 py-2 mt-2 text-white rounded-lg bg-slate-700"
-          onClick={resetForm}
+          onClick={() => (isEditMode ? navigate("/list") : resetForm())}
         >
-          Reset Details
+          {isEditMode ? "Cancel" : "Reset details"}
         </button>
       </div>
     </form>

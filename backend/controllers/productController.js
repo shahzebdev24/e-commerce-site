@@ -65,6 +65,67 @@ const listProducts = async (req, res) => {
   }
 };
 
+// INFO: Route for updating a product (partial image replace by slot)
+const updateProduct = async (req, res) => {
+  try {
+    const {
+      productId,
+      name,
+      description,
+      price,
+      category,
+      subCategory,
+      sizes,
+      bestSeller,
+    } = req.body;
+
+    const product = await productModel.findById(productId);
+    if (!product) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Product not found" });
+    }
+
+    let images = [0, 1, 2, 3].map((i) => product.image[i] || "");
+
+    for (let i = 0; i < 4; i++) {
+      const key = `image${i + 1}`;
+      const file = req.files?.[key]?.[0];
+      if (file) {
+        const result = await cloudinary.uploader.upload(file.path, {
+          resource_type: "image",
+        });
+        images[i] = result.secure_url;
+      }
+    }
+
+    images = images.filter(Boolean);
+
+    if (images.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Product must have at least one image",
+      });
+    }
+
+    await productModel.findByIdAndUpdate(productId, {
+      name,
+      description,
+      price: Number(price),
+      category,
+      subCategory,
+      sizes: JSON.parse(sizes),
+      bestSeller: bestSeller === "true" || bestSeller === true,
+      image: images,
+    });
+
+    res.status(200).json({ success: true, message: "Product updated" });
+  } catch (error) {
+    console.log("Error while updating product: ", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // INFO: Route for removing a product
 const removeProduct = async (req, res) => {
   try {
@@ -89,4 +150,10 @@ const getSingleProduct = async (req, res) => {
   }
 };
 
-export { addProduct, listProducts, removeProduct, getSingleProduct };
+export {
+  addProduct,
+  listProducts,
+  removeProduct,
+  getSingleProduct,
+  updateProduct,
+};
