@@ -13,16 +13,12 @@ const port = process.env.PORT || 4000;
 connectCloudinary();
 let isRetryingDb = false;
 
-const allowedOrigins = new Set([
-  "https://e-commerce-site-nine-mocha.vercel.app",
-  "https://e-commerce-site-i5fz.vercel.app",
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://127.0.0.1:3000",
-  "http://127.0.0.1:5173",
-  "http://127.0.0.1:5174",
-]);
+const allowedOrigins = new Set(
+  (process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean)
+);
 
 const corsOptions = {
   origin: (origin, callback) => {
