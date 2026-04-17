@@ -32,6 +32,10 @@ const productSchema = new mongoose.Schema({
   bestSeller: {
     type: Boolean,
   },
+  shippingFee: {
+    type: Number,
+    default: 200,
+  },
   date: {
     type: Number,
     required: true,

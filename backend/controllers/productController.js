@@ -12,6 +12,7 @@ const addProduct = async (req, res) => {
       subCategory,
       sizes,
       bestSeller,
+      shippingFee,
     } = req.body;
 
     const image1 = req.files.image1 && req.files.image1[0];
@@ -40,6 +41,7 @@ const addProduct = async (req, res) => {
       subCategory,
       sizes: JSON.parse(sizes),
       bestSeller: bestSeller === "true" ? true : false,
+      shippingFee: Number(shippingFee) || 200,
       image: imageUrls,
       date: Date.now(),
     };
@@ -77,6 +79,7 @@ const updateProduct = async (req, res) => {
       subCategory,
       sizes,
       bestSeller,
+      shippingFee,
     } = req.body;
 
     const product = await productModel.findById(productId);
@@ -116,6 +119,7 @@ const updateProduct = async (req, res) => {
       subCategory,
       sizes: JSON.parse(sizes),
       bestSeller: bestSeller === "true" || bestSeller === true,
+      shippingFee: Number(shippingFee) || 200,
       image: images,
     });
 

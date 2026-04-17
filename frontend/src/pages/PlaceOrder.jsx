@@ -6,7 +6,7 @@ import axios from 'axios'
 import { toast } from 'react-toastify'
 
 const PlaceOrder = () => {
-  const { navigate, backendUrl, token, cartItems, setCartItems, getCartAmount, delivery_fee, products } = useContext(ShopContext);
+  const { navigate, backendUrl, token, cartItems, setCartItems, getCartAmount, getShippingFee, products } = useContext(ShopContext);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -54,7 +54,7 @@ const PlaceOrder = () => {
       const orderData = {
         address: formData,
         items: orderItems,
-        amount: getCartAmount() + delivery_fee,
+        amount: getCartAmount() + getShippingFee(),
       };
 
       const response = await axios.post(`${backendUrl}/api/order/place`, orderData, {

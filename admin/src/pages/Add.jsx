@@ -39,6 +39,7 @@ const Add = ({ token }) => {
   const [category, setCategory] = useState("");
   const [subCategory, setSubCategory] = useState("");
   const [price, setPrice] = useState("");
+  const [shippingFee, setShippingFee] = useState("");
   const [sizes, setSizes] = useState([]);
   const [bestSeller, setBestSeller] = useState(false);
   const isFashionCategory = category === "Fashion & Design";
@@ -54,6 +55,7 @@ const Add = ({ token }) => {
     setCategory("");
     setSubCategory("");
     setPrice("");
+    setShippingFee("");
     setSizes([]);
     setBestSeller(false);
   };
@@ -86,6 +88,7 @@ const Add = ({ token }) => {
         setCategory(formCat);
         setSubCategory(p.subCategory || "");
         setPrice(String(p.price ?? ""));
+        setShippingFee(String(p.shippingFee ?? ""));
         setSizes(Array.isArray(p.sizes) ? p.sizes : []);
         setBestSeller(Boolean(p.bestSeller));
         setImage1(null);
@@ -121,6 +124,7 @@ const Add = ({ token }) => {
       formData.append("category", category);
       formData.append("subCategory", isFashionCategory ? subCategory : "");
       formData.append("price", price);
+      formData.append("shippingFee", shippingFee || "200");
       formData.append("sizes", JSON.stringify(sizes));
       formData.append("bestSeller", bestSeller);
 
@@ -312,6 +316,17 @@ const Add = ({ token }) => {
             type="number"
             placeholder="Enter Product Price"
             required
+          />
+        </div>
+        <div>
+          <p className="mb-2 text-lg font-semibold">Shipping Fee (AED)</p>
+          <input
+            onChange={(e) => setShippingFee(e.target.value)}
+            value={shippingFee}
+            className="w-full px-3 py-2 border-gray-500 max-w-[500px]"
+            type="number"
+            placeholder="e.g. 200"
+            min="0"
           />
         </div>
       </div>

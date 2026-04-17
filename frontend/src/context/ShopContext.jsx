@@ -13,7 +13,6 @@ const ShopContextProvider = (props) => {
   const [token, setToken] = useState("");
 
   const currency = "AED";
-  const delivery_fee = 200;
   const backendUrl = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/+$/, "");
 
   const navigate = useNavigate();
@@ -105,6 +104,19 @@ const ShopContextProvider = (props) => {
     setCartItems(cartData);
   };
 
+  const getShippingFee = () => {
+    let total = 0;
+    for (const itemId in cartItems) {
+      const product = products.find((p) => p._id === itemId);
+      if (!product) continue;
+      const hasSomething = Object.values(cartItems[itemId]).some((qty) => qty > 0);
+      if (hasSomething) {
+        total += product.shippingFee ?? 200;
+      }
+    }
+    return total;
+  };
+
   const getCartAmount = () => {
     let totalAmount = 0;
     for (const items in cartItems) {
@@ -124,7 +136,7 @@ const ShopContextProvider = (props) => {
   const value = {
     products,
     currency,
-    delivery_fee,
+    getShippingFee,
     search,
     setSearch,
     showSearch,
