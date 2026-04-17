@@ -17,10 +17,8 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const App = () => {
   return (
-    <div className='px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]'>
-      <ToastContainer />
-      {/* Sliding Ribbon */}
-      <div className='w-full bg-black text-white text-xs py-2 overflow-hidden'>
+    <>
+    <div className='w-full bg-black text-white text-xs py-2 overflow-hidden'>
         <div className='flex whitespace-nowrap animate-marquee'>
           {[...Array(4)].map((_, i) => (
             <span key={i} className='mx-12'>
@@ -29,6 +27,11 @@ const App = () => {
           ))}
         </div>
       </div>
+      
+    <div className='px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]'>
+      <ToastContainer />
+      {/* Sliding Ribbon */}
+      
       <NavBar />
       <SearchBar />
       <Routes>
@@ -44,6 +47,7 @@ const App = () => {
       </Routes>
       <Footer />
     </div>
+    </>
   )
 }
 
